@@ -1,0 +1,7 @@
+name: Publish Document
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/183415/c7be07569eff4eb6b0b7cd4b021012b0
+bundleId: https://api.rpubs.com/api/v1/document/183415/c7be07569eff4eb6b0b7cd4b021012b0
+url: http://rpubs.com/unityculture/183415
+when: 1465959445.1932

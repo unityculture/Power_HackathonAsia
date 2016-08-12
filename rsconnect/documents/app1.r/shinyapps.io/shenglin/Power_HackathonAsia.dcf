@@ -1,0 +1,10 @@
+name: Power_HackathonAsia
+account: shenglin
+server: shinyapps.io
+appId: 119730
+bundleId: 530111
+url: https://shenglin.shinyapps.io/Power_HackathonAsia/
+when: 1470978792.69566
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: 20160426_data.csv|20160510_Radar_plot.csv|20160525_data_cluster.csv|20160525_Radar_plot.csv|20160608_data_cluster.r|20160613_data_cluster.csv|20160613_Radar_plot.csv|20160613_radar_story.R|app.R|datajoin.png|datascource.png|Power_EDA.html|Power_EDA.Rmd|README.md|Tutorial_Data_Join.Rmd|Tutorial.html|Tutorial.Rmd|Data_ETL_Code/電量分析資料匯總.R|Data_ETL_Code/匯入101各村里綜合所得稅所得總額.R|Data_ETL_Code/匯入102-104各村里教育程度.R|Data_ETL_Code/匯入10304-10502生死結離資料.R|Data_ETL_Code/匯入104Q3各村里住宅統計資料.R|Data_ETL_Code/匯入台北市各里戶籍人口分布.R|Data_ETL_Code/匯入台電電力資料.R|origin_data/101綜合所得稅所得總額.CSV|origin_data/102edu.csv|origin_data/103edu.csv|origin_data/104各村里教育程度資料.csv|origin_data/台北市各區村里清單.csv|origin_data/BDMD.csv|origin_data/household(104).csv|origin_data/resident.csv
