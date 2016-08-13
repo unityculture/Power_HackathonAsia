@@ -2,9 +2,8 @@ name: Power_HackathonAsia
 account: shenglin
 server: shinyapps.io
 appId: 119730
-bundleId: 530977
+bundleId: 530996
 url: https://shenglin.shinyapps.io/Power_HackathonAsia/
-when: 1471072393.40755
+when: 1471080723.18158
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: README.md|origin_data/101綜合所得稅所得總額.CSV|origin_data/102edu.csv|origin_data/103edu.csv|origin_data/104各村里教育程度資料.csv|origin_data/台北市各區村里清單.csv|origin_data/BDMD.csv|origin_data/resident.csv

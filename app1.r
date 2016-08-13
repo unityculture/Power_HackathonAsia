@@ -19,8 +19,10 @@ cbind(grDevices::col2rgb(col.raw),3) -> col
 # radar.data <- read.csv('./20160613_Radar_plot.csv') %>%
 #   mutate_each(funs(round(.,digits=2)),-index)
 # radar.data$mean <- rowMeans(radar.data[,-1])
-data <- fread('./20160811_data.csv')
-power <- fread('iconv -f big5 -t utf8 origin_data/power_twomonth.csv')
+data <- fread('iconv -f big5 -t utf8 ./data_hack.csv')
+data %>% select(統計年月,縣市,行政區域,每人平均用電度數) -> power
+colnames(power)[4] <- '售電量度數'
+# power <- fread('iconv -f big5 -t utf8 origin_data/power_twomonth.csv')
 power_area <- power %>% mutate(鄉鎮 = substring(行政區域,1,3))
 sfn <- readOGR(dsn = 'map/Village_NLSC_1050219.shp',
                layer='Village_NLSC_1050219', stringsAsFactors = F,
@@ -79,17 +81,23 @@ ui <- dashboardPage(
     tabItems(
       tabItem(tabName = 'overview',
               fluidRow(
+                tags$iframe(src = "https://unityculturesheng.carto.com/viz/35497786-1716-11e6-bc60-0e3ff518bd15/embed_map",
+                                   width="100%" ,height="520")),
+              fluidRow(
                 column(
                   width = 4,
-                  box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                  box(width = NULL, status = 'warning', title = "用電大戶基本查詢:",
+                      solidHeader = TRUE, collapsible = T, 
                       selectInput('overview_time_big', 
                                   label = "用電大戶里查詢(雙月制)：", 
                                   choices = unique(power$統計年月),
-                                  selected = 10407),
-                      selectInput('overview_n_big', 
-                                  label = "用電大戶前幾名：", 
-                                  choices = c(1:30),
-                                  selected = 5),
+                                  selected = 10505),selectInput('overview_n_big', 
+                                                                label = "用電大戶前幾名：", 
+                                                                choices = c(1:30),
+                                                                selected = 5)
+                  ),
+                  box(width = NULL, status = 'warning', title = "用電成長幅度基本查詢:",
+                      solidHeader = TRUE, collapsible = T, 
                       fluidRow(
                         column(width = 6,
                                selectInput('overview_time_growth1', 
@@ -100,7 +108,7 @@ ui <- dashboardPage(
                                selectInput('overview_time_growth2', 
                                            label = "耗電成長里查詢(雙月制) - 當期：", 
                                            choices = unique(power$統計年月),
-                                           selected = 10407))
+                                           selected = 10505))
                       ),
                       selectInput('overview_n_growth', 
                                   label = "成長幅度前幾名：", 
@@ -115,11 +123,11 @@ ui <- dashboardPage(
                     tabPanel(h5('用電大戶'), status = 'info', height = 400,
                              plotlyOutput("overview_big_plot")
                     ),
-                    tabPanel(h5('用電成長大戶'), status = 'info', height = 400,
-                             plotlyOutput("overview_growth_plot")
-                    ),
                     tabPanel(h5('用電大戶所在位置'), status = 'info', height = 400,
                              leafletOutput("map_big")
+                    ),
+                    tabPanel(h5('用電成長大戶'), status = 'info', height = 400,
+                             plotlyOutput("overview_growth_plot")
                     ),
                     tabPanel(h5('用電成長大戶所在位置'), status = 'info', height = 400,
                              leafletOutput("map_growth")
@@ -130,15 +138,19 @@ ui <- dashboardPage(
              fluidRow(
                column(
                  width = 4,
-                 box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                 box(width = NULL, status = 'info', title = "省電大戶基本查詢:",
+                     solidHeader = TRUE, collapsed = T, collapsible = T, 
                      selectInput('overview_time_small', 
                                  label = "省電大戶里查詢(雙月制)：", 
                                  choices = unique(power$統計年月),
                                  selected = 10407),
                      selectInput('overview_n_small', 
                                  label = "省電大戶前幾名：", 
-                                 choices = c(1:10),
-                                 selected = 5),
+                                 choices = c(1:30),
+                                 selected = 5)
+                 ),
+                 box(width = NULL, status = 'info', title = "省電成長幅度基本查詢:",
+                     solidHeader = TRUE, collapsed = T, collapsible = T, 
                      fluidRow(
                        column(width = 6,
                               selectInput('overview_time_decay1', 
@@ -153,7 +165,7 @@ ui <- dashboardPage(
                      ),
                      selectInput('overview_n_decay', 
                                  label = "省電成長幅度前幾名：", 
-                                 choices = c(1:10),
+                                 choices = c(1:30),
                                  selected = 5)
                      )
              ),
@@ -163,8 +175,14 @@ ui <- dashboardPage(
                  width = NULL,
                  tabPanel(h5('省電大戶'), status = 'info', height = 400,
                           plotlyOutput("overview_small_plot")),
+                 tabPanel(h5('省電大戶所在位置'), status = 'info', height = 400,
+                          leafletOutput("map_sml")
+                 ),
                  tabPanel(h5('省電成長大戶'), status = 'info', height = 400,
-                          plotlyOutput("overview_decay_plot"))
+                          plotlyOutput("overview_decay_plot")),
+                 tabPanel(h5('省電大戶所在位置'), status = 'info', height = 400,
+                          leafletOutput("map_sml_growth")
+                 )
                )
              )
            )
@@ -173,7 +191,7 @@ ui <- dashboardPage(
             fluidRow(
               column(
                 width = 4,
-                box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                box(width = NULL, status = 'info', height = 500, title = "人口特性比較",
                     selectInput('n_big', 
                                 label = "用電大戶前幾名：", 
                                 choices = c(1:10),
@@ -189,7 +207,7 @@ ui <- dashboardPage(
                                 selected = 10407)
                 )
               ),
-              box(width = 8, status = 'info', height = 400, title = "選擇 :",
+              box(width = 8, status = 'info', height = 500, title = "選擇 :",
                   highchartOutput(outputId = "big_small_competion")
                 )
              )
@@ -198,7 +216,8 @@ ui <- dashboardPage(
             fluidRow(
               column(
                 width = 4,
-                box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                box(width = NULL, status = 'warning', height = 500, title = "用電大戶基本查詢: ",
+                    solidHeader = T,
                     selectInput('area_c', 
                                 label = "選擇村里", 
                                 choices = unique(power_area$鄉鎮),
@@ -214,17 +233,17 @@ ui <- dashboardPage(
                     fluidRow(
                       column(width = 6,
                              selectInput('detail_time_growth1', 
-                                         label = "耗電成長里查詢(雙月制) - 基期：", 
+                                         label = "用電成長里查詢(雙月制) - 基期：", 
                                          choices = unique(power$統計年月),
                                          selected = 10405)), # 第一個算不出成長
                       column(width = 6,
                              selectInput('detail_time_growth2', 
-                                         label = "耗電成長里查詢(雙月制) - 當期：", 
+                                         label = "用電成長里查詢(雙月制) - 當期：", 
                                          choices = unique(power$統計年月),
                                          selected = 10407))
                     ),
                     selectInput('detail_n_growth', 
-                                label = "耗電成長幅度前幾名：", 
+                                label = "用電成長幅度前幾名：", 
                                 choices = c(1:10),
                                 selected = 5)
                 )
@@ -235,7 +254,7 @@ ui <- dashboardPage(
                   width = NULL,
                   tabPanel(h5('用電大戶'), status = 'info', height = 400,
                            plotlyOutput("detail_big_plot")),
-                  tabPanel(h5('耗電成長大戶'), status = 'info', height = 400,
+                  tabPanel(h5('用電成長大戶'), status = 'info', height = 400,
                            plotlyOutput("detail_growth_plot"))
                 )
               )
@@ -243,7 +262,8 @@ ui <- dashboardPage(
             fluidRow(
               column(
                 width = 4,
-                box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                box(width = NULL, status = 'info', height = 500, title = "省電大戶基本查詢:",
+                    solidHeader = T,
                     selectInput('area_d', 
                                 label = "選擇村里", 
                                 choices = unique(power_area$鄉鎮),
@@ -290,18 +310,23 @@ ui <- dashboardPage(
             fluidRow(
               column(
                 width = 4,
-                box(width = NULL, status = 'info', height = 400, title = "選擇 :",
+                box(width = NULL, status = 'info', height = 500, title = "選擇 :",
                     infoBoxOutput("approvalBox",width = 100),
                     selectInput('yearmonth', 
                                 label = "選擇年月：", 
                                 choices = unique(power$統計年月),
-                                selected = 10407)
+                                selected = 10407),
+                    infoBoxOutput("人口特性",width = 100),
+                    infoBoxOutput("尖峰時段",width = 100)
                 )
               ),
-              box(width = 8, status = 'info', height = 400, title = "選擇 :",
+              box(width = 8, status = 'info', height = 500, title = "選擇 :",
                   highchartOutput(outputId = "demo")
               )
-            )
+            ),
+            fluidRow(
+              tags$iframe(src = "https://unityculturesheng.carto.com/viz/973a42ea-315b-11e6-b013-0e3a376473ab/embed_map",
+                          width="100%" ,height="520"))
     )
   )
  )
@@ -315,8 +340,12 @@ server <- function(input, output) {
       arrange(desc(售電量度數)) %>% 
       slice(1:input$overview_n_big) %>% 
       ggplot(aes(x = reorder(行政區域, desc(售電量度數)), y = 售電量度數)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5)))-> plot_tmp
     ggplotly(plot_tmp)
   })
   
@@ -331,8 +360,12 @@ server <- function(input, output) {
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$overview_n_growth) %>% 
       ggplot(aes(x = reorder(行政區域, desc(用電量成長比例)), y = 用電量成長比例)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp1
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp1
     ggplotly(plot_tmp1)
   })
   
@@ -343,8 +376,12 @@ server <- function(input, output) {
       arrange(售電量度數) %>% 
       slice(1:input$overview_n_small) %>% 
       ggplot(aes(x = reorder(行政區域,售電量度數), y = 售電量度數)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp2
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp2
     ggplotly(plot_tmp2)
   })
   
@@ -360,18 +397,16 @@ server <- function(input, output) {
       arrange(省電量成長比例) %>% 
       slice(1:input$overview_n_decay) %>% 
       ggplot(aes(x = reorder(行政區域, 省電量成長比例), y = 省電量成長比例)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp3
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp3
     ggplotly(plot_tmp3)
   })
   
-  ## test
-  output$approvalBox2 <- renderInfoBox({
-    infoBox(
-      "Approval", "80%", icon = icon("thumbs-up", lib = "glyphicon"),
-      color = "yellow", fill = TRUE
-    )
-  })
+  
   
   output$map_big <- renderLeaflet({
     power %>% 
@@ -396,6 +431,41 @@ server <- function(input, output) {
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$overview_n_growth) %$% 行政區域 -> vname_growth
     leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_growth)) %>%
+      addPolygons(
+        stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5
+      ) %>% 
+      setView(lng = 121.536862, lat = 25.045235, zoom = 11) %>% addTiles()
+  })
+  
+  ## 省電地圖
+  output$map_sml <- renderLeaflet({
+    power %>% 
+      filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
+      group_by(行政區域) %>% 
+      arrange(desc(統計年月)) %>% 
+      mutate(base = lead(售電量度數, 1),
+             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      ungroup %>% 
+      arrange(省電量成長比例) %>% 
+      slice(1:input$overview_n_decay) %$% 行政區域 -> vname_sml
+    leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_sml)) %>%
+      addPolygons(
+        stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5
+      ) %>% 
+      setView(lng = 121.536862, lat = 25.045235, zoom = 11) %>% addTiles()
+  })
+  
+  output$map_sml_growth <- renderLeaflet({
+    power %>% 
+      filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
+      group_by(行政區域) %>% 
+      arrange(desc(統計年月)) %>% 
+      mutate(base = lead(售電量度數, 1),
+             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      ungroup %>% 
+      arrange(省電量成長比例) %>% 
+      slice(1:input$overview_n_decay) %$% 行政區域 -> vname_sml_growth
+    leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_sml_growth)) %>%
       addPolygons(
         stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5
       ) %>% 
@@ -483,8 +553,12 @@ server <- function(input, output) {
       arrange(desc(售電量度數)) %>% 
       slice(1:input$detail_n_big) %>% 
       ggplot(aes(x = reorder(行政區域, desc(售電量度數)), y = 售電量度數)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp_area
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp_area
     ggplotly(plot_tmp_area)
   })
   
@@ -500,8 +574,12 @@ server <- function(input, output) {
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$detail_n_growth) %>% 
       ggplot(aes(x = reorder(行政區域, desc(用電量成長比例)), y = 用電量成長比例)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp_area1
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp_area1
     ggplotly(plot_tmp_area1)
   })
   
@@ -513,8 +591,12 @@ server <- function(input, output) {
       arrange(售電量度數) %>% 
       slice(1:input$detail_n_small) %>% 
       ggplot(aes(x = reorder(行政區域,售電量度數), y = 售電量度數)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp_area2
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp_area2
     ggplotly(plot_tmp_area2)
   })
   
@@ -531,12 +613,30 @@ server <- function(input, output) {
       arrange(省電量成長比例) %>% 
       slice(1:input$detail_n_decay) %>% 
       ggplot(aes(x = reorder(行政區域, 省電量成長比例), y = 省電量成長比例)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '行政區域') -> plot_tmp_area3
+      geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
+      theme_bw(base_family="STHeiti") +
+      labs(x = '行政區域') + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp_area3
     ggplotly(plot_tmp_area3)
   })
+  
   output$demo <- renderHighchart({
     hcmix
+  })
+  
+  output$人口特性 <- renderInfoBox({
+    infoBox(
+      "人口特性", paste0("六大指標","!!"), icon = icon("users"),
+      color = "yellow",fill =TRUE
+    )
+  })
+  output$尖峰時段 <- renderInfoBox({
+    infoBox(
+      "尖峰時段", paste0("用電尖峰","!!"), icon = icon("clock-o"),
+      color = "red",fill =TRUE
+    )
   })
 }
 
