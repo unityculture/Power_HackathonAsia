@@ -22,7 +22,7 @@ cbind(grDevices::col2rgb(col.raw),3) -> col
 data <- fread('./20160811_data.csv')
 power <- fread('iconv -f big5 -t utf8 origin_data/power_twomonth.csv')
 power_area <- power %>% mutate(鄉鎮 = substring(行政區域,1,3))
-sfn <- readOGR(dsn = '村里界圖(TWD97經緯度)1050317/Village_NLSC_1050219.shp',
+sfn <- readOGR(dsn = 'map/Village_NLSC_1050219.shp',
                layer='Village_NLSC_1050219', stringsAsFactors = F,
                verbose = F)
 ## demo專用
