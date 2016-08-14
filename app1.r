@@ -11,6 +11,7 @@ library(leaflet)
 library(rgdal)
 library(maptools)
 library(magrittr)
+library(ggthemes)
 
 ## 讀入所需資料(原始資料包資料)
 
@@ -21,7 +22,6 @@ cbind(grDevices::col2rgb(col.raw),3) -> col
 # radar.data$mean <- rowMeans(radar.data[,-1])
 data <- fread('iconv -f big5 -t utf8 ./data_hack.csv')
 data %>% select(統計年月,縣市,行政區域,每人平均用電度數) -> power
-colnames(power)[4] <- '售電量度數'
 # power <- fread('iconv -f big5 -t utf8 origin_data/power_twomonth.csv')
 power_area <- power %>% mutate(鄉鎮 = substring(行政區域,1,3))
 sfn <- readOGR(dsn = 'map/Village_NLSC_1050219.shp',
@@ -42,27 +42,27 @@ hcmix = highchart() %>%
            min = 0, max = 1) %>% 
   hc_series(
     list(
-      name = "高扶老比族群(銀髮族群)",
+      name = "Cluster-3",
       data = radar[,c(2)],
       pointPlacement = 'on',color=col.raw[1]),
     list(
-      name = "已婚之高收入知識份子族群",
+      name = "Cluster-2",
       data = radar[,c(3)],
       pointPlacement = 'on',color=col.raw[2]),
     list(
-      name = "高知識份子小康家庭族群",
+      name = "Cluster-1",
       data = radar[,c(4)],
       pointPlacement = 'on',color=col.raw[3]),
     list(
-      name = "低收入單身男性族群",
+      name = "Cluster-4",
       data = radar[,c(5)],
       pointPlacement = 'on',color=col.raw[4]),
     list(
-      name = "單身小資女族群",
+      name = "Cluster-5",
       data = radar[,c(6)],
       pointPlacement = 'on',color=col.raw[5]),
     list(
-      name = "各群平均",
+      name = "Overall-Mean",
       data = radar[,c(10)],
       pointPlacement = 'on',color='#474747'))
 
@@ -72,9 +72,9 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("台北市用電量概況", tabName = "overview", icon = icon("bar-chart")),
-      menuItem("各行政區用電量概況", tabName = "area", icon = icon("opera")),
-      menuItem("節電對象之輪廓", tabName = "compare", icon = icon("opera")),
-      menuItem("節電對象分群範例", tabName = "demo", icon = icon("opera"))
+      menuItem("各行政區用電量概況", tabName = "area", icon = icon("plug")),
+      menuItem("節電對象之輪廓", tabName = "compare", icon = icon("user")),
+      menuItem("節電對象分群範例", tabName = "demo", icon = icon("sitemap"))
     )
   ),
   dashboardBody(
@@ -131,6 +131,9 @@ ui <- dashboardPage(
                     ),
                     tabPanel(h5('用電成長大戶所在位置'), status = 'info', height = 400,
                              leafletOutput("map_growth")
+                    ),
+                    tabPanel(h5('歷年月各村里每人用電度數'), status = 'info', height = 400,
+                             plotlyOutput('yearmap')
                     )
                   )
                 )
@@ -182,6 +185,9 @@ ui <- dashboardPage(
                           plotlyOutput("overview_decay_plot")),
                  tabPanel(h5('省電大戶所在位置'), status = 'info', height = 400,
                           leafletOutput("map_sml_growth")
+                 ),
+                 tabPanel(h5('歷年各村里省電度數'), status = 'info', height = 400,
+                          plotlyOutput("yearmap1")
                  )
                )
              )
@@ -310,14 +316,16 @@ ui <- dashboardPage(
             fluidRow(
               column(
                 width = 4,
-                box(width = NULL, status = 'info', height = 500, title = "選擇 :",
+                box(width = NULL, status = 'info', height = 500,
                     infoBoxOutput("approvalBox",width = 100),
                     selectInput('yearmonth', 
                                 label = "選擇年月：", 
                                 choices = unique(power$統計年月),
                                 selected = 10407),
                     infoBoxOutput("人口特性",width = 100),
-                    infoBoxOutput("尖峰時段",width = 100)
+                    infoBoxOutput("單身小資",width = 100),
+                    infoBoxOutput("高知識",width = 100),
+                    infoBoxOutput("銀髮族",width = 100)
                 )
               ),
               box(width = 8, status = 'info', height = 500, title = "選擇 :",
@@ -337,9 +345,9 @@ server <- function(input, output) {
   output$overview_big_plot <- renderPlotly({
     power %>% 
       filter(統計年月 == input$overview_time_big) %>% 
-      arrange(desc(售電量度數)) %>% 
+      arrange(desc(每人平均用電度數)) %>% 
       slice(1:input$overview_n_big) %>% 
-      ggplot(aes(x = reorder(行政區域, desc(售電量度數)), y = 售電量度數)) +
+      ggplot(aes(x = reorder(行政區域, desc(每人平均用電度數)), y = 每人平均用電度數)) +
       geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
       theme_bw(base_family="STHeiti") +
       labs(x = '行政區域') + 
@@ -354,8 +362,8 @@ server <- function(input, output) {
       filter(統計年月 %in% c(input$overview_time_growth1,input$overview_time_growth2)) %>%
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             用電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             用電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$overview_n_growth) %>% 
@@ -373,9 +381,9 @@ server <- function(input, output) {
   output$overview_small_plot <- renderPlotly({
     power %>% 
       filter(統計年月 == input$overview_time_small) %>% 
-      arrange(售電量度數) %>% 
+      arrange(每人平均用電度數) %>% 
       slice(1:input$overview_n_small) %>% 
-      ggplot(aes(x = reorder(行政區域,售電量度數), y = 售電量度數)) +
+      ggplot(aes(x = reorder(行政區域,每人平均用電度數), y = 每人平均用電度數)) +
       geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
       theme_bw(base_family="STHeiti") +
       labs(x = '行政區域') + 
@@ -391,8 +399,8 @@ server <- function(input, output) {
       filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             省電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(省電量成長比例) %>% 
       slice(1:input$overview_n_decay) %>% 
@@ -400,18 +408,58 @@ server <- function(input, output) {
       geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
       theme_bw(base_family="STHeiti") +
       labs(x = '行政區域') + 
-      theme(axis.text.x=element_text(angle =20 ,size=10),
+      theme(axis.text.x=element_text(angle =45 ,size=10),
             axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
             axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5))) -> plot_tmp3
     ggplotly(plot_tmp3)
   })
   
+  output$yearmap <- renderPlotly({
+    power %>% 
+      filter(統計年月 == input$overview_time_big) %>% 
+      arrange(desc(每人平均用電度數)) %>% 
+      slice(1:input$overview_n_big) %$% 行政區域 -> vname_big
+    
+    power %>% 
+      filter(行政區域 %in% vname_big) %>% 
+      ggplot(aes(x = 統計年月 %>% as.factor() , y = 每人平均用電度數 , group = 行政區域 , color = 行政區域)) + 
+      geom_line() + 
+      geom_point() + 
+      theme_bw(base_family="STHeiti") + 
+      labs(x = '統計年月', title = "歷年月每人平均用電度數") + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5)))+
+      coord_cartesian(ylim = c(250,1200)) -> temp
+      ggplotly(temp)
+    
+  })
   
+  output$yearmap1 <- renderPlotly({
+    power %>% 
+      filter(統計年月 == input$overview_time_small) %>% 
+      arrange(每人平均用電度數) %>% 
+      slice(1:input$overview_n_small) %$% 行政區域 -> vname_small
+    
+    power %>% 
+      filter(行政區域 %in% vname_small) %>% 
+      ggplot(aes(x = 統計年月 %>% as.factor() , y = 每人平均用電度數 , group = 行政區域 , color = 行政區域)) + 
+      geom_line() + 
+      geom_point() + 
+      theme_bw(base_family="STHeiti") + 
+      labs(x = '統計年月', title = "歷年月每人平均省電度數") + 
+      theme(axis.text.x=element_text(angle =20 ,size=10),
+            axis.text.y=element_text(size=15),axis.title.x=element_text(size=15),
+            axis.title.y=element_text(size=20),plot.title = element_text(size = rel(1.5)))+
+      coord_cartesian(ylim = c(0,500)) -> temp_small
+    ggplotly(temp_small)
+    
+  })
   
   output$map_big <- renderLeaflet({
     power %>% 
       filter(統計年月 == input$overview_time_big) %>% 
-      arrange(desc(售電量度數)) %>% 
+      arrange(desc(每人平均用電度數)) %>% 
       slice(1:input$overview_n_big) %$% 行政區域 -> vname_big
     leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_big)) %>%
       addPolygons(
@@ -425,8 +473,8 @@ server <- function(input, output) {
       filter(統計年月 %in% c(input$overview_time_growth1,input$overview_time_growth2)) %>%
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             用電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             用電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$overview_n_growth) %$% 行政區域 -> vname_growth
@@ -443,8 +491,8 @@ server <- function(input, output) {
       filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             省電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(省電量成長比例) %>% 
       slice(1:input$overview_n_decay) %$% 行政區域 -> vname_sml
@@ -460,8 +508,8 @@ server <- function(input, output) {
       filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             省電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(省電量成長比例) %>% 
       slice(1:input$overview_n_decay) %$% 行政區域 -> vname_sml_growth
@@ -550,9 +598,9 @@ server <- function(input, output) {
     power_area %>% 
       filter(統計年月 == input$detail_time_big) %>% 
       filter(鄉鎮 == input$area_c) %>% 
-      arrange(desc(售電量度數)) %>% 
+      arrange(desc(每人平均用電度數)) %>% 
       slice(1:input$detail_n_big) %>% 
-      ggplot(aes(x = reorder(行政區域, desc(售電量度數)), y = 售電量度數)) +
+      ggplot(aes(x = reorder(行政區域, desc(每人平均用電度數)), y = 每人平均用電度數)) +
       geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
       theme_bw(base_family="STHeiti") +
       labs(x = '行政區域') + 
@@ -568,8 +616,8 @@ server <- function(input, output) {
       filter(鄉鎮 == input$area_c) %>% 
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             用電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             用電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(desc(用電量成長比例)) %>% 
       slice(1:input$detail_n_growth) %>% 
@@ -588,9 +636,9 @@ server <- function(input, output) {
     power_area %>% 
       filter(統計年月 == input$detail_time_small) %>% 
       filter(鄉鎮 == input$area_d) %>% 
-      arrange(售電量度數) %>% 
+      arrange(每人平均用電度數) %>% 
       slice(1:input$detail_n_small) %>% 
-      ggplot(aes(x = reorder(行政區域,售電量度數), y = 售電量度數)) +
+      ggplot(aes(x = reorder(行政區域,每人平均用電度數), y = 每人平均用電度數)) +
       geom_bar(stat = 'identity',fill= "#4595D6") + ## 加顏色崇甫
       theme_bw(base_family="STHeiti") +
       labs(x = '行政區域') + 
@@ -607,8 +655,8 @@ server <- function(input, output) {
       filter(鄉鎮 == input$area_d) %>% 
       group_by(行政區域) %>% 
       arrange(desc(統計年月)) %>% 
-      mutate(base = lead(售電量度數, 1),
-             省電量成長比例 = (售電量度數 - base)/base) %>% 
+      mutate(base = lead(每人平均用電度數, 1),
+             省電量成長比例 = (每人平均用電度數 - base)/base) %>% 
       ungroup %>% 
       arrange(省電量成長比例) %>% 
       slice(1:input$detail_n_decay) %>% 
@@ -628,14 +676,27 @@ server <- function(input, output) {
   
   output$人口特性 <- renderInfoBox({
     infoBox(
-      "人口特性", paste0("六大指標","!!"), icon = icon("users"),
+      "Property of Population", paste0("Six Special Index",""), icon = icon("users"),
       color = "yellow",fill =TRUE
     )
   })
-  output$尖峰時段 <- renderInfoBox({
+  output$單身小資 <- renderInfoBox({
     infoBox(
-      "尖峰時段", paste0("用電尖峰","!!"), icon = icon("clock-o"),
+      "Cluster-5",p("。Single",br(),"。Female"), icon = icon("female"),
       color = "red",fill =TRUE
+    )
+  })
+  output$高知識 <- renderInfoBox({
+    infoBox(
+      "Cluster-1", p("。High-Education",br(),"。High-Income"), icon = icon("money"),
+      color = "green",fill =TRUE
+    )
+  })
+  
+  output$銀髮族 <- renderInfoBox({
+    infoBox(
+      "Cluster-3", p("。Elderly",br(),"。Low-Income"), icon = icon("battery-empty"),
+      color = "light-blue",fill =TRUE
     )
   })
 }

@@ -2,8 +2,8 @@ name: Power_HackathonAsia
 account: shenglin
 server: shinyapps.io
 appId: 119730
-bundleId: 530996
+bundleId: 531368
 url: https://shenglin.shinyapps.io/Power_HackathonAsia/
-when: 1471080723.18158
+when: 1471150127.11924
 asMultiple: FALSE
 asStatic: FALSE
