@@ -148,7 +148,7 @@ ui <- dashboardPage(
                                  choices = unique(power$統計年月),
                                  selected = 10407),
                      selectInput('overview_n_small', 
-                                 label = "省電大戶前幾名：", 
+                                 label = "省電大戶前幾名：前幾名：", 
                                  choices = c(1:30),
                                  selected = 5)
                  ),
@@ -183,7 +183,7 @@ ui <- dashboardPage(
                  ),
                  tabPanel(h5('省電成長大戶'), status = 'info', height = 400,
                           plotlyOutput("overview_decay_plot")),
-                 tabPanel(h5('省電大戶所在位置'), status = 'info', height = 400,
+                 tabPanel(h5('省電幅度高之所在位置'), status = 'info', height = 400,
                           leafletOutput("map_sml_growth")
                  ),
                  tabPanel(h5('歷年各村里省電度數'), status = 'info', height = 400,
@@ -488,15 +488,10 @@ server <- function(input, output) {
   ## 省電地圖
   output$map_sml <- renderLeaflet({
     power %>% 
-      filter(統計年月 %in% c(input$overview_time_decay1,input$overview_time_decay2)) %>%
-      group_by(行政區域) %>% 
-      arrange(desc(統計年月)) %>% 
-      mutate(base = lead(每人平均用電度數, 1),
-             省電量成長比例 = (每人平均用電度數 - base)/base) %>% 
-      ungroup %>% 
-      arrange(省電量成長比例) %>% 
-      slice(1:input$overview_n_decay) %$% 行政區域 -> vname_sml
-    leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_sml)) %>%
+      filter(統計年月 == input$overview_time_small) %>% 
+      arrange(desc(每人平均用電度數)) %>% 
+      slice(1:input$overview_n_small) %$% 行政區域 -> vname_big
+    leaflet(sfn %>% subset(paste0(sfn$T_Name, sfn$V_Name) %in% vname_big)) %>%
       addPolygons(
         stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5
       ) %>% 
@@ -563,8 +558,8 @@ server <- function(input, output) {
           group_by(index) %>% 
           mutate(value = (value-min(value))/(max(value)-min(value))) %>% 
           spread(index,value) %>% 
-          arrange(desc(每戶平均用電度數_log)) %>% #挑出最上與最下
-          slice(input$n_small:456) %>% 
+          arrange(每戶平均用電度數_log) %>% #挑出最上與最下
+          slice(1:input$n_small) %>% 
           select(2:7) %>% 
           summarise_each(funs(mean)) %>% 
           mutate(group = "down")
