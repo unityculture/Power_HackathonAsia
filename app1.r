@@ -74,7 +74,26 @@ ui <- dashboardPage(
       menuItem("台北市用電量概況", tabName = "overview", icon = icon("bar-chart")),
       menuItem("各行政區用電量概況", tabName = "area", icon = icon("plug")),
       menuItem("節電對象之輪廓", tabName = "compare", icon = icon("user")),
-      menuItem("節電對象分群範例", tabName = "demo", icon = icon("sitemap"))
+      menuItem("節電對象分群範例", tabName = "demo", icon = icon("sitemap")),
+      h4("Hi All :",style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left"),
+      p("這份Dashboard是是我們參加",
+        a("105年亞洲跨國黑客競賽",href="http://opendata.tca.org.tw/hackathon/#one"),"的產品。<br>
+        因為時間關係，還有諸多可以做更好的地方
+        若對此分析有任何建議
+        期望各界高手能夠提供寶貴的意見
+        或是相關的資料給我們
+        一起創造開放資料的價值。",
+        style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left"),
+      h4(strong("粉紅高壓電團隊簡介：")),
+      p(a("1. 楊崇甫(ALGER)-政大統計碩二",
+          href="https://www.linkedin.com/in/%E5%B4%87%E7%94%AB-%E6%A5%8A-291242124"),
+        style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left"),
+      p(a("2. 陳昱霈(GU)-政大統計碩二",href="https://www.linkedin.com/in/yu-pei-chen-b852ba110"),
+        style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left"),
+      p(a("3. 林敬昇(Lin)-政大統計碩二",href="https://www.linkedin.com/in/lincingsheng"),
+        style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left"),
+      p(a("4. 蘆葦寧(Ning)-政大企研碩一",href="https://www.facebook.com/iamningl?fref=ts"),
+        style = "font-family: 'times'; font-si16pt ;line-height: 30px ;",align="left")
     )
   ),
   dashboardBody(
